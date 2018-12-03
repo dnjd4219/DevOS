@@ -180,3 +180,12 @@ void kStringToDecimalHexTest(const char *pcParameterBuffer)
 		iCount++;
 	}
 }
+
+void kShutdown(const char *pcParamegerBuffer)
+{
+	kPrintf("System Shutdown Start...\n");
+
+	kPrintf("Press Any Key To Reboot PC...");
+	kGetCh();
+	kReboot();
+}
