@@ -4,7 +4,7 @@
 
 CONSOLEMANAGER gs_stConsoleManager = {0, };
 
-void kInitializeCOnsole(int iX, int iY)
+void kInitializeConsole(int iX, int iY)
 {
 	kMemSet(&gs_stConsoleManager, 0, sizeof(gs_stConsoleManager));
 

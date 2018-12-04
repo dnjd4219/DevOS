@@ -50,7 +50,7 @@ void kStartConsoleShell(void)
 			}
 
 			if(iCommandBufferIndex < CONSOLESHELL_MAXCOMMANDBUFFERCOUNT){
-				vcCOmmandBuffer[iCOmmandBufferIndex++] = bKey;
+				vcCommandBuffer[iCommandBufferIndex++] = bKey;
 				kPrintf("%c", bKey);
 			}
 		}
@@ -60,7 +60,7 @@ void kStartConsoleShell(void)
 void kExecuteCommand(const char *pcCommandBuffer)
 {
 	int i, iSpaceIndex;
-	int iCommandBufferLength, iCommandLength
+	int iCommandBufferLength, iCommandLength;
 	int iCount;
 
 	iCommandBufferLength = kStrLen(pcCommandBuffer);
@@ -80,7 +80,7 @@ void kExecuteCommand(const char *pcCommandBuffer)
 	}
 
 	if(i >= iCount){
-		kPrintf("'%s' is not found.\n", pcCOmmandBuffer);
+		kPrintf("'%s' is not found.\n", pcCommandBuffer);
 	}
 }
 
@@ -100,7 +100,7 @@ int kGetNextParameter(PARAMETERLIST *pstList, char *pcParameter)
 		return 0;
 	}
 
-	for(i=pcList->iCurrentPosition; i<pstList->iLength; i++){
+	for(i=pstList->iCurrentPosition; i<pstList->iLength; i++){
 		if(pstList->pcBuffer[i] == ' '){
 			break;
 		}
@@ -147,7 +147,7 @@ void kCls(const char *pcParameterBuffer)
 	kSetCursor(0, 1);
 }
 
-void kShowTotalRAWSize(const char *pcParameterBuffer)
+void kShowTotalRAMSize(const char *pcParameterBuffer)
 {
 	kPrintf("Total RAM Size = %d MB\n", kGetTotalRAMSize());
 }
