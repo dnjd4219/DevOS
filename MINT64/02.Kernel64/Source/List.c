@@ -9,7 +9,7 @@ void kInitializeList(LIST *pstList)
 
 int kGetListCount(const LIST *pstList)
 {
-	return pstList->iItempCount;
+	return pstList->iItemCount;
 }
 
 void kAddListToTail(LIST *pstList, void *pvItem)
@@ -65,7 +65,7 @@ void *kRemoveList(LIST *pstList, QWORD qwID)
 				pstList->pvHeader = NULL;
 				pstList->pvTail = NULL;
 			}
-			else if(pstLink == pstLink->pvHeader){
+			else if(pstLink == pstList->pvHeader){
 				pstList->pvHeader = pstLink->pvNext;
 			}
 			else if(pstLink == pstList->pvTail){
@@ -90,7 +90,7 @@ void *kRemoveListFromHeader(LIST *pstList)
 		return NULL;
 
 	pstLink = (LISTLINK *)pstList->pvHeader;
-	return kRemoveList(pstList, pstList->qwID);
+	return kRemoveList(pstList, pstLink->qwID);
 }
 
 void *kRemoveListListFromTail(LIST *pstList)
