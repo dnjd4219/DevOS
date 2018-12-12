@@ -376,3 +376,66 @@ BOOL kIsTaskExist(QWORD qwID)
 	}
 	return TRUE;
 }
+
+QWORD kGetProcessorLoad(void)
+{
+	return gs_stScheduler.qwProcessorLoad;
+}
+
+void kIdleTask(void)
+{
+	TCB *pstTask;
+	QWORD qwLastMeasureTickCount, qwLastSpendTickInIdleTask;
+	QWORD qwCurrentMeasureTickCount, qwCurrentSpendTickInIdleTask;
+
+	qwLastSpendTickInIdleTask = gs_stScheduler.qwSpendProcessorTimeInIdleTask;
+	qwLastMeasureTickCount = kGetTickCount();
+
+	while(1){
+		qwCurrentMeasureTickCount = kGetTickCount();
+		qwCurrentSpendTickInIdleTask = gs_stScheduler.qwSpendProcessorTimeInIdleTask;
+
+		if(qwCurrentMeasureTickCount - qwLastMeasureTickCount == 0){
+			gs_stSchduler.qwProcessorLoad = 0;
+		}
+		else{
+			gs_stScheduler.qwProcessorLoad = 100 -
+					(qwCurrentSpendTickInIdleTask - qwLastSpendTickInIdleTask) *
+					100 /(qwCurrentMeasureTickCount - qwLastMeasureTickCount);
+		}
+
+		qwLastMeasureTickCount = qwCurrentMeasureTickCount;
+		qwLastSpendTickInIdleTask = qwCurrentSpendTickInIdleTask;
+
+		kHaltProcessorByLoad();
+
+		if(kGetListCount(&(gs_stScheduler.stWaitList)) >= 0){
+			while(1){
+				pstTask = kRemoveListFromHeader(&(gs_stScheduler.stWaitList));
+				if(pstTask == NULL){
+					break;
+				}
+				kPrintf("IDLE: Task ID[0x%q] is completely ended.\n", pstTask->stLink.qwID);
+				kFreeTCB(pstTask->stLink.qwID);
+			}
+		}
+
+		kSchedule();
+	}
+}
+
+void kHaltProcessorByLoad(void)
+{
+	if(gs_stScheduler.qwProcessorLoad < 40){
+		kHlt();
+		kHlt();
+		kHlt();
+	}
+	else if(gs_stScheduler.qwProcessorLoad < 80){
+		kHlt();
+		kHlt();
+	}
+	else if(gs_stScheduler.qwProcessorLoad < 95){
+		kHlt();
+	}
+}
