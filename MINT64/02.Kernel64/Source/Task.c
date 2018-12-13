@@ -1,5 +1,6 @@
 #include "Task.h"
 #include "Descriptor.h"
+#include "Utility.h"
 
 static SCHEDULER gs_stScheduler;
 static TCBPOOLMANAGER gs_stTCBPoolManager;
@@ -49,7 +50,7 @@ void kFreeTCB(QWORD qwID)
 {
 	int i;
 
-	i = GETTCBBOFFSET(qwID);
+	i = GETTCBOFFSET(qwID);
 
 	kMemSet(&(gs_stTCBPoolManager.pstStartAddress[i].stContext), 0, sizeof(CONTEXT));
 	gs_stTCBPoolManager.pstStartAddress[i].stLink.qwID = i;
@@ -67,7 +68,7 @@ TCB *kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress)
 		return NULL;
 	}
 
-	pvStackAddress = (void *)(TASK_STACKPOOLADDRESS + (TASK_STACKSIZE * GETTCBVOFFSET(pstTask->stLink.qwID)));
+	pvStackAddress = (void *)(TASK_STACKPOOLADDRESS + (TASK_STACKSIZE * GETTCBOFFSET(pstTask->stLink.qwID)));
 
 	kSetUpTask(pstTask, qwFlags, qwEntryPointAddress, pvStackAddress, TASK_STACKSIZE);
 	kAddTaskToReadyList(pstTask);
@@ -162,7 +163,7 @@ BOOL kAddTaskToReadyList(TCB *pstTask)
 	if(bPriority >= TASK_MAXREADYLISTCOUNT){
 		return FALSE;
 	}
-	kAddListToTail(&(gs_stScheduler.vstReadyList[bPriority]).pstTask);
+	kAddListToTail(&(gs_stScheduler.vstReadyList[bPriority]), pstTask);
 	return TRUE;
 }
 
@@ -220,7 +221,7 @@ void kSchedule(void)
 	TCB *pstRunningTask, *pstNextTask;
 	BOOL bPreviousFlag;
 
-	if(kGetReadyTaskCount() <1){
+	if(kGetReadyTaskCount() < 1){
 		return;
 	}
 
@@ -242,6 +243,10 @@ void kSchedule(void)
 
 	if(pstRunningTask->qwFlags & TASK_FLAGS_ENDTASK){
 		kAddListToTail(&(gs_stScheduler.stWaitList), pstRunningTask);
+		kSwitchContext(NULL, &(pstNextTask->stContext));
+	}
+	else{
+		kAddTaskToReadyList(pstRunningTask);
 		kSwitchContext(&(pstRunningTask->stContext), &(pstNextTask->stContext));
 	}
 
@@ -264,7 +269,7 @@ BOOL kScheduleInInterrupt(void)
 	gs_stScheduler.pstRunningTask = pstNextTask;
 
 	if((pstRunningTask->qwFlags & TASK_FLAGS_IDLE) == TASK_FLAGS_IDLE){
-		gs_stScheduler.qwSpendProcessorTimeInIndleTask += TASK_PROCESSORTIME;
+		gs_stScheduler.qwSpendProcessorTimeInIdleTask += TASK_PROCESSORTIME;
 	}
 
 	if(pstRunningTask->qwFlags & TASK_FLAGS_ENDTASK){
@@ -396,7 +401,7 @@ void kIdleTask(void)
 		qwCurrentSpendTickInIdleTask = gs_stScheduler.qwSpendProcessorTimeInIdleTask;
 
 		if(qwCurrentMeasureTickCount - qwLastMeasureTickCount == 0){
-			gs_stSchduler.qwProcessorLoad = 0;
+			gs_stScheduler.qwProcessorLoad = 0;
 		}
 		else{
 			gs_stScheduler.qwProcessorLoad = 100 -
