@@ -1,5 +1,6 @@
 #include "Synchronization.h"
 #include "Utility.h"
+#include "AssemblyUtility.h"gs_stScheduler.iProcessorTime = TASK_PROCESSORTIME;
 #include "Task.h"
 
 BOOL kLockForSystemData(void)
@@ -46,7 +47,7 @@ void kUnlock(MUTEX *pstMutex)
 		return;
 	}
 
-	pstMutex->qwTaskID = TASK_INVALID;
+	pstMutex->qwTaskID = TASK_INVALIDID;
 	pstMutex->dwLockCount = 0;
 	pstMutex->bLockFlag = FALSE;
 }
