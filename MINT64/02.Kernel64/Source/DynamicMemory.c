@@ -26,7 +26,7 @@ void kInitializeDynamicMemory(void)
 		gs_stDynamicMemory.pbAllocatedBlockListIndex[i] = 0xFF;
 	}
 
-	gs_stDynamicMemory.pstBitmapOfLevel = (BITMAP *)(DYNAMICMEMORY_START_ADDRESS + (sizeof(BYTE) * gs_stDynamicMemory.iBlockCountOfSmallesBlock));
+	gs_stDynamicMemory.pstBitmapOfLevel = (BITMAP *)(DYNAMICMEMORY_START_ADDRESS + (sizeof(BYTE) * gs_stDynamicMemory.iBlockCountOfSmallestBlock));
 	pbCurrentBitmapPosition = ((BYTE *)gs_stDynamicMemory.pstBitmapOfLevel) + (sizeof(BITMAP) * gs_stDynamicMemory.iMaxLevelCount);
 
 	for(j=0; j<gs_stDynamicMemory.iMaxLevelCount; j++){
@@ -42,8 +42,6 @@ void kInitializeDynamicMemory(void)
 		if((iBlockCountOfLevel % 8) != 0){
 			*pbCurrentBitmapPosition = 0x00;
 
-			i = iBlockCountOfLevel = 0x00;
-
 			i = iBlockCountOfLevel % 8;
 			if((i % 2) == 1){
 				*pbCurrentBitmapPosition |= (DYNAMICMEMORY_EXIST << (i - 1));
@@ -54,7 +52,7 @@ void kInitializeDynamicMemory(void)
 	}
 
 	gs_stDynamicMemory.qwStartAddress = DYNAMICMEMORY_START_ADDRESS + iMetaBlockCount * DYNAMICMEMORY_MIN_SIZE;
-	gs_stDynamicMemory.qwEndAddress = kCalCulateDynamicMemorySize() + DYNAMICMEMORY_START_ADDRESS;
+	gs_stDynamicMemory.qwEndAddress = kCalculateDynamicMemorySize() + DYNAMICMEMORY_START_ADDRESS;
 	gs_stDynamicMemory.qwUsedSize = 0;
 }
 
@@ -90,7 +88,7 @@ static int kCalculateMetaBlockCount(QWORD qwDynamicRAMSize)
 	return (dwSizeOfAllocatedBlockListIndex + dwSizeOfBitmap + DYNAMICMEMORY_MIN_SIZE - 1) / DYNAMICMEMORY_MIN_SIZE;
 }
 
-void *kAllocateMemory(QWROD qwSize)
+void *kAllocateMemory(QWORD qwSize)
 {
 	QWORD qwAlignedSize;
 	QWORD qwRelativeAddress;
@@ -115,7 +113,7 @@ void *kAllocateMemory(QWROD qwSize)
 
 	iIndexOfBlockList = kGetBlockListIndexOfMatchSize(qwAlignedSize);
 
-	qwRelativeAddress = qwAlignedSize * lOffest;
+	qwRelativeAddress = qwAlignedSize * lOffset;
 	iSizeArrayOffset = qwRelativeAddress / DYNAMICMEMORY_MIN_SIZE;
 	gs_stDynamicMemory.pbAllocatedBlockListIndex[iSizeArrayOffset] = (BYTE)iIndexOfBlockList;
 	gs_stDynamicMemory.qwUsedSize += qwAlignedSize;
@@ -199,7 +197,7 @@ static int kFindFreeBlockInBitmap(int iBlockListIndex)
 		return -1;
 	}
 
-	iMaxCount = gs_stDynamicMemory.iBlockCountOfSmallesBlock >> iBlockListIndex;
+	iMaxCount = gs_stDynamicMemory.iBlockCountOfSmallestBlock >> iBlockListIndex;
 	pbBitmap = gs_stDynamicMemory.pstBitmapOfLevel[iBlockListIndex].pbBitmap;
 	for(i=0; i<iMaxCount;){
 		if(((iMaxCount - 1) / 64) > 0){
@@ -261,7 +259,7 @@ BOOL kFreeMemory(void *pvAddress)
 
 	iBitmapOffset = qwRelativeAddress / qwBlockSize;
 	if(kFreeBuddyBlock(iBlockListIndex, iBitmapOffset) == TRUE){
-		gs_stDynamicMemory.qwUsedSize -= qwBlocksize;
+		gs_stDynamicMemory.qwUsedSize -= qwBlockSize;
 		return TRUE;
 	}
 
@@ -307,16 +305,18 @@ static BYTE kGetFlagInBitmap(int iBlockListIndex, int iOffset)
 	BYTE *pbBitmap;
 
 	pbBitmap = gs_stDynamicMemory.pstBitmapOfLevel[iBlockListIndex].pbBitmap;
-	if((pbBitmap[iOffset / 8] &(0x01 << (iOffset % 8))) != 0x00){
-		return DYNAMICMEMORY_EMPTY;
+	if((pbBitmap[iOffset / 8] & (0x01 << (iOffset % 8))) != 0x00){
+		return DYNAMICMEMORY_EXIST;
 	}
+
+	return DYNAMICMEMORY_EMPTY;
 }
 
 void kGetDynamicMemoryInformation(QWORD *pqwDynamicMemoryStartAddress, QWORD *pqwDynamicMemoryTotalSize, QWORD *pqwMetaDataSize, QWORD *pqwUsedMemorySize)
 {
 	*pqwDynamicMemoryStartAddress = DYNAMICMEMORY_START_ADDRESS;
 	*pqwDynamicMemoryTotalSize = kCalculateDynamicMemorySize();
-	*pqwMetaDataSize = kCalculateMetaBlockCount(*pqwDynamicMemoryTotalSize) * DYANMICMEMORY_MIN_SIZE;
+	*pqwMetaDataSize = kCalculateMetaBlockCount(*pqwDynamicMemoryTotalSize) * DYNAMICMEMORY_MIN_SIZE;
 	*pqwUsedMemorySize = gs_stDynamicMemory.qwUsedSize;
 }
 
